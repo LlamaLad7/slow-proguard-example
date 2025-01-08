@@ -1,0 +1,68 @@
+import proguard.gradle.ProGuardTask
+
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        google()
+    }
+    dependencies {
+        classpath 'com.guardsquare:proguard-gradle:7.6.1'
+    }
+}
+
+plugins {
+    id 'java'
+}
+
+group = 'com.llamalad7'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+tasks.register('proguard', ProGuardTask) {
+    dependsOn(tasks.jar)
+    outputs.upToDateWhen { false }
+
+    verbose
+
+    // Specify the input jars, output jars, and library jars.
+
+    injars tasks.jar.outputs.files.singleFile
+    outjars 'build/libs/proguard_out.jar'
+
+    // Automatically handle the Java version of this build.
+    if (System.getProperty('java.version').startsWith('1.')) {
+        // Before Java 9, the runtime classes were packaged in a single jar file.
+        libraryjars "${System.getProperty('java.home')}/lib/rt.jar"
+    } else {
+        // As of Java 9, the runtime classes are packaged in modular jmod files.
+        libraryjars "${System.getProperty('java.home')}/jmods/java.base.jmod", jarfilter: '!**.jar', filter: '!module-info.class'
+        libraryjars "${System.getProperty('java.home')}/jmods/java.sql.jmod", jarfilter: '!**.jar', filter: '!module-info.class'
+        //libraryjars "${System.getProperty('java.home')}/jmods/....."
+    }
+
+    // Put all obfuscated classes into the nameless root package.
+
+    repackageclasses ''
+
+    // Allow classes and class members to be made public.
+
+    allowaccessmodification
+
+    dontoptimize
+    dontshrink
+
+    keep("class **")
+}
